@@ -85,8 +85,9 @@ cat > /etc/init/nodeserver.conf << EOL
     respawn limit 5 60
 
     script
-
-      exec /usr/bin/node /var/www/server.js 2>&1
+      #export NODE_ENV=development
+      #export SITE_URL=http://sandbox:8080
+      exec /usr/bin/node /var/www/server.js >> /var/log/nodeserver.log  2>&1
 
     end script
 EOL
