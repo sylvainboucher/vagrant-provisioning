@@ -73,7 +73,9 @@ start nodeserver
 
 #create nodeserver upstart script
 cat > /etc/init/nodeserver.conf << EOL
+#!upstart
     description "Node server"
+    author "Sylvain Boucher"
 
     start on runlevel [2345]
     stop on runlevel [^2345]
@@ -84,12 +86,35 @@ cat > /etc/init/nodeserver.conf << EOL
     # Give up restart after 5 respawns in 60 seconds
     respawn limit 5 60
 
+    # vars
+    env NODE_BIN=/usr/bin/node
+    env APP_DIR=/var/www
+    env SCRIPT_FILE="server.js"
+    env LOG_FILE="/var/log/nodeserver.log"
+    env RUN_AS="vagrant"
+    #env NODE_ENV="development"
+    #env SITE_URL="http://sandbox:8080"
+
     script
-      #export NODE_ENV=development
-      #export SITE_URL=http://sandbox:8080
-      exec /usr/bin/node /var/www/server.js >> /var/log/nodeserver.log  2>&1
+      touch $LOG_FILE
+      chown $RUN_AS:$RUN_AS $LOG_FILE
+      chdir $APP_DIR
+      exec sudo -u $RUN_AS -E sh -c "$NODE_BIN $SCRIPT_FILE >> $LOG_FILE  2>&1"
 
     end script
+
+pre-start script
+# Date format same as (new Date()).toISOString() for consistency
+echo "[`date -u +%Y-%m-%dT%T.%3NZ`] (sys) Starting" >> $LOG_FILE
+end script
+
+pre-stop script
+echo "[`date -u +%Y-%m-%dT%T.%3NZ`] (sys) Stopping" >> $LOG_FILE
+end script
+
+post-start script
+echo "===== App restarted =====" >> $LOG_FILE
+end script
 EOL
 
 
